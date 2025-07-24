@@ -51,10 +51,16 @@ else
     echo "⚠ 514 portu dinlenmiyor - rsyslog konfigürasyonunu kontrol edin"
 fi
 
+# 5651 yasası için ana klasör oluştur
+echo "5651 yasası için klasör yapısı oluşturuluyor..."
+mkdir -p /var/5651
+chown -R syslog:adm /var/5651
+chmod -R 755 /var/5651
+
 # Test log klasörü oluştur
 echo "Test klasörü oluşturuluyor..."
-mkdir -p /var/log/test-device/test-interface
-chown -R syslog:adm /var/log/test-device
+mkdir -p /var/5651/test-device/test-interface
+chown -R syslog:adm /var/5651/test-device
 
 # Konfigürasyon dosyasını test et
 echo "Konfigürasyon test ediliyor..."
@@ -80,10 +86,10 @@ fi
 echo ""
 echo "=== Kurulum Tamamlandı ==="
 echo ""
-echo "📁 Log Klasörleri: /var/log/[cihaz-adı]/[interface-adı]/"
-echo "👀 Canlı İzleme: sudo tail -f /var/log/*/*/\$(date +%Y-%m-%d).log"
+echo "📁 5651 Log Klasörleri: /var/5651/[cihaz-ip]/[interface-adı]/"
+echo "👀 Canlı İzleme: sudo tail -f /var/5651/*/*/\$(date +%Y-%m-%d).log"
 echo "🔧 Port Kontrolü: sudo ss -tuln | grep 514"
-echo "📊 Log Analizi: sudo grep 'src-mac' /var/log/*/*/\$(date +%Y-%m-%d).log"
+echo "📊 Log Analizi: sudo grep 'src-mac' /var/5651/*/*/\$(date +%Y-%m-%d).log"
 echo ""
 echo "🎯 Sıradaki Adımlar:"
 echo "1. MikroTik cihazlarınızda syslog ayarlarını yapın"

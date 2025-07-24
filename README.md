@@ -60,18 +60,18 @@ sudo rsyslogd -N1
 ls -la /var/log/ | grep -E "(trasst|mikrotik)"
 ```
 
-### 2. Log Dizini Yapısı
+### 2. Log Dizini Yapısı (5651 Yasası Uyumlu)
 
 ```
-/var/log/
-├── trasst.maslak-hotspot/
+/var/5651/
+├── 92.113.42.253/
 │   ├── 42_MASLAK_AVM/
 │   │   └── 2024-07-24.log
 │   ├── genel/
 │   │   └── 2024-07-24.log
 │   └── other/
 │       └── 2024-07-24.log
-└── [diğer-cihaz-adları]/
+└── [diğer-cihaz-ip-adresleri]/
     └── [interface-adları]/
         └── günlük-dosyalar.log
 ```
@@ -129,38 +129,38 @@ add name=remote-syslog target=remote remote=RSYSLOG_SUNUCU_IP remote-port=514
 
 ```bash
 # Belirli cihazın logları
-sudo tail -f /var/log/trasst.maslak-hotspot/42_MASLAK_AVM/$(date +%Y-%m-%d).log
+sudo tail -f /var/5651/92.113.42.253/42_MASLAK_AVM/$(date +%Y-%m-%d).log
 
 # Tüm interface logları
-sudo tail -f /var/log/*/*/$(date +%Y-%m-%d).log
+sudo tail -f /var/5651/*/*/$(date +%Y-%m-%d).log
 
 # Klasör yapısını görüntüle
-sudo find /var/log -name "*.log" -type f | head -20
+sudo find /var/5651 -name "*.log" -type f | head -20
 ```
 
 ### Log Analizi
 
 ```bash
 # Günlük trafik istatistikleri
-sudo grep "forward:" /var/log/*/*/$(date +%Y-%m-%d).log | wc -l
+sudo grep "in:" /var/5651/*/*/$(date +%Y-%m-%d).log | wc -l
 
 # IP bazında analiz
-sudo grep "172.6.2" /var/log/*/*/$(date +%Y-%m-%d).log
+sudo grep "172.6.2" /var/5651/*/*/$(date +%Y-%m-%d).log
 
 # MAC bazında analiz (5651 yasası için önemli)
-sudo grep "f2:6d:cd:48:1c:74" /var/log/*/*/$(date +%Y-%m-%d).log
+sudo grep "f2:6d:cd:48:1c:74" /var/5651/*/*/$(date +%Y-%m-%d).log
 
 # Belirli MAC'in hangi IP'leri kullandığı
-sudo grep "src-mac f2:6d:cd:48:1c:74" /var/log/*/*/$(date +%Y-%m-%d).log | grep -o "172\.[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+"
+sudo grep "src-mac f2:6d:cd:48:1c:74" /var/5651/*/*/$(date +%Y-%m-%d).log | grep -o "172\.[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+"
 
 # MAC-IP eşleştirme tablosu
-sudo grep "src-mac" /var/log/*/*/$(date +%Y-%m-%d).log | sed 's/.*src-mac \([^,]*\).*\([0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\):\([0-9]*\).*/\1 \2/' | sort | uniq
+sudo grep "src-mac" /var/5651/*/*/$(date +%Y-%m-%d).log | sed 's/.*src-mac \([^,]*\).*\([0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\):\([0-9]*\).*/\1 \2/' | sort | uniq
 
 # Gece saatlerinde aktif MAC adresleri
-sudo grep "0[0-6]:[0-9][0-9]:" /var/log/*/*/$(date +%Y-%m-%d).log | grep -o "src-mac [^,]*" | sort | uniq
+sudo grep "0[0-6]:[0-9][0-9]:" /var/5651/*/*/$(date +%Y-%m-%d).log | grep -o "src-mac [^,]*" | sort | uniq
 
 # En çok trafik üreten MAC adresleri
-sudo grep "src-mac" /var/log/*/*/$(date +%Y-%m-%d).log | grep -o "src-mac [^,]*" | sort | uniq -c | sort -nr | head -10
+sudo grep "src-mac" /var/5651/*/*/$(date +%Y-%m-%d).log | grep -o "src-mac [^,]*" | sort | uniq -c | sort -nr | head -10
 ```
 
 ## 5651 Yasası Uyumluluğu
