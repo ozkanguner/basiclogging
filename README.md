@@ -79,6 +79,44 @@ sudo grep "forward:" /var/log/*/*/$(date +%Y-%m-%d).log | wc -l
 
 # IP bazında analiz
 sudo grep "172.6.2" /var/log/*/*/$(date +%Y-%m-%d).log
+
+# MAC bazında analiz (5651 yasası için önemli)
+sudo grep "f2:6d:cd:48:1c:74" /var/log/*/*/$(date +%Y-%m-%d).log
+
+# Belirli MAC'in hangi IP'leri kullandığı
+sudo grep "src-mac f2:6d:cd:48:1c:74" /var/log/*/*/$(date +%Y-%m-%d).log | grep -o "172\.[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+"
+
+# MAC-IP eşleştirme tablosu
+sudo grep "src-mac" /var/log/*/*/$(date +%Y-%m-%d).log | sed 's/.*src-mac \([^,]*\).*\([0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\):\([0-9]*\).*/\1 \2/' | sort | uniq
+
+# Gece saatlerinde aktif MAC adresleri
+sudo grep "0[0-6]:[0-9][0-9]:" /var/log/*/*/$(date +%Y-%m-%d).log | grep -o "src-mac [^,]*" | sort | uniq
+
+# En çok trafik üreten MAC adresleri
+sudo grep "src-mac" /var/log/*/*/$(date +%Y-%m-%d).log | grep -o "src-mac [^,]*" | sort | uniq -c | sort -nr | head -10
+```
+
+## 5651 Yasası Uyumluluğu
+
+### MAC Adres Takibi
+Her log kaydında aşağıdaki bilgiler bulunur:
+- **Kaynak MAC**: `src-mac f2:6d:cd:48:1c:74`
+- **Kaynak IP**: `172.6.2.134:53471`
+- **Hedef IP**: `2.23.154.18:80`
+- **Zaman Damgası**: `Jul 24 14:29:59`
+- **Interface**: `in:42_MASLAK_AVM`
+
+### Yasal Sorgu Örnekleri
+
+```bash
+# Belirli MAC adresinin tüm aktiviteleri
+sudo grep "src-mac aa:bb:cc:dd:ee:ff" /var/log/*/*/2024-07-24.log
+
+# Belirli tarih aralığındaki tüm MAC adresleri
+find /var/log -name "2024-07-2*.log" -exec grep "src-mac" {} \; | grep -o "src-mac [^,]*" | sort | uniq
+
+# Hotspot login bilgileri ile MAC eşleştirme
+sudo grep "logged in\|logged out" /var/log/*/genel/$(date +%Y-%m-%d).log
 ```
 
 ## Konfigürasyon Detayları
