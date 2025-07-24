@@ -56,10 +56,38 @@ echo "Test klasörü oluşturuluyor..."
 mkdir -p /var/log/test-device/test-interface
 chown -R syslog:adm /var/log/test-device
 
+# Konfigürasyon dosyasını test et
+echo "Konfigürasyon test ediliyor..."
+if rsyslogd -N1 >/dev/null 2>&1; then
+    echo "✓ rsyslog konfigürasyonu geçerli"
+else
+    echo "✗ rsyslog konfigürasyonu hatası!"
+    echo "Detaylar için: sudo rsyslogd -N1"
+fi
+
+# UFW firewall kontrol et ve öner
+if command -v ufw &> /dev/null; then
+    if ufw status | grep -q "Status: active"; then
+        echo ""
+        echo "⚠ UFW firewall aktif. 514 portunu açmak için:"
+        echo "sudo ufw allow 514/udp"
+        echo "sudo ufw allow 514/tcp"
+    else
+        echo "✓ UFW firewall deaktif"
+    fi
+fi
+
 echo ""
 echo "=== Kurulum Tamamlandı ==="
-echo "Log klasörleri: /var/log/[cihaz-adı]/[interface-adı]/"
-echo "Canlı log izleme: sudo tail -f /var/log/*/*/\$(date +%Y-%m-%d).log"
-echo "Port kontrolü: sudo ss -tuln | grep 514"
 echo ""
-echo "MikroTik cihazlarınızda syslog ayarlarını yapabilirsiniz." 
+echo "📁 Log Klasörleri: /var/log/[cihaz-adı]/[interface-adı]/"
+echo "👀 Canlı İzleme: sudo tail -f /var/log/*/*/\$(date +%Y-%m-%d).log"
+echo "🔧 Port Kontrolü: sudo ss -tuln | grep 514"
+echo "📊 Log Analizi: sudo grep 'src-mac' /var/log/*/*/\$(date +%Y-%m-%d).log"
+echo ""
+echo "🎯 Sıradaki Adımlar:"
+echo "1. MikroTik cihazlarınızda syslog ayarlarını yapın"
+echo "2. Firewall kurallarını ekleyin"
+echo "3. Test logları gönderin"
+echo ""
+echo "📖 Detaylı kullanım: https://github.com/ozkanguner/basiclogging" 

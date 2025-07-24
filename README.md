@@ -12,14 +12,52 @@ MikroTik cihazlarından gelen logları otomatik olarak cihaz adı ve interface'e
 
 ## Kurulum
 
-### 1. rsyslog Konfigürasyonu
+### Otomatik Kurulum (Önerilen)
 
 ```bash
-# Konfigürasyon dosyasını kopyala
+# Repository'yi clone et
+git clone https://github.com/ozkanguner/basiclogging.git
+cd basiclogging
+
+# Otomatik kurulum scriptini çalıştır
+sudo ./install.sh
+```
+
+### Manuel Kurulum
+
+```bash
+# 1. rsyslog paketini kur (eğer yoksa)
+sudo apt update
+sudo apt install -y rsyslog
+
+# 2. Konfigürasyon dosyasını kopyala
 sudo cp 50-mikrotik-dynamic.conf /etc/rsyslog.d/
 
-# rsyslog'u yeniden başlat
+# 3. Dosya izinlerini ayarla
+sudo chmod 644 /etc/rsyslog.d/50-mikrotik-dynamic.conf
+sudo chown root:root /etc/rsyslog.d/50-mikrotik-dynamic.conf
+
+# 4. rsyslog'u yeniden başlat
 sudo systemctl restart rsyslog
+
+# 5. Servisi etkinleştir
+sudo systemctl enable rsyslog
+
+# 6. Durumu kontrol et
+sudo systemctl status rsyslog
+```
+
+### Kurulum Sonrası Kontroller
+
+```bash
+# 514 portlarının dinlendiğini kontrol et
+sudo ss -tuln | grep 514
+
+# rsyslog konfigürasyonunu test et
+sudo rsyslogd -N1
+
+# Log klasörü izinlerini kontrol et
+ls -la /var/log/ | grep -E "(trasst|mikrotik)"
 ```
 
 ### 2. Log Dizini Yapısı
@@ -38,7 +76,21 @@ sudo systemctl restart rsyslog
         └── günlük-dosyalar.log
 ```
 
-### 3. MikroTik Ayarları
+### 3. Ubuntu Firewall Ayarları
+
+```bash
+# 514 portunu açmak (gerekirse)
+sudo ufw allow 514/udp
+sudo ufw allow 514/tcp
+
+# Firewall durumunu kontrol et
+sudo ufw status
+
+# Firewall'ı devre dışı bırakmak (test için)
+sudo ufw disable
+```
+
+### 4. MikroTik Ayarları
 
 #### Syslog Action Oluşturma
 ```bash
@@ -46,14 +98,29 @@ sudo systemctl restart rsyslog
 add name=remote-syslog target=remote remote=RSYSLOG_SUNUCU_IP remote-port=514
 ```
 
-#### Firewall Logging
+#### Firewall Logging (5651 Yasası İçin)
 ```bash
-# Tüm forward trafiği
+# Tüm forward trafiği logla
 /ip firewall filter add chain=forward action=log log-prefix="TUM_TRAFIK"
+
+# Memory loglarını kapat (performans için)
+/system logging remove [find action=memory]
 
 # Syslog'a gönder
 /system logging add topics=firewall action=remote-syslog
 /system logging add topics=hotspot action=remote-syslog
+```
+
+#### Port Bazlı Detaylı Loglama (Opsiyonel)
+```bash
+# HTTP trafiği
+/ip firewall filter add chain=forward protocol=tcp dst-port=80 action=log log-prefix="HTTP_TRAFFIC"
+
+# HTTPS trafiği  
+/ip firewall filter add chain=forward protocol=tcp dst-port=443 action=log log-prefix="HTTPS_TRAFFIC"
+
+# DNS sorguları
+/ip firewall filter add chain=forward protocol=udp dst-port=53 action=log log-prefix="DNS_QUERY"
 ```
 
 ## Kullanım
@@ -126,11 +193,63 @@ sudo grep "logged in\|logged out" /var/log/*/genel/$(date +%Y-%m-%d).log
 - **Tarih**: `%$year%-%$month%-%$day%` formatında
 - **Yetkilendirme**: `syslog:adm` kullanıcı/grup
 
+## Sorun Giderme
+
+### Log Gelmiyor
+```bash
+# rsyslog durumunu kontrol et
+sudo systemctl status rsyslog
+
+# Port dinleniyor mu?
+sudo ss -tuln | grep 514
+
+# Konfigürasyon dosyası doğru mu?
+sudo rsyslogd -N1
+
+# MikroTik'ten test log gönder
+/log info "TEST LOG MESSAGE"
+```
+
+### Klasörler Oluşmuyor
+```bash
+# Konfigürasyon dosyasını kontrol et
+sudo cat /etc/rsyslog.d/50-mikrotik-dynamic.conf
+
+# rsyslog'u debug modda başlat
+sudo rsyslogd -dn
+
+# Manuel klasör oluşturma izni ver
+sudo mkdir -p /var/log/test-device/test-interface
+sudo chown -R syslog:adm /var/log/test-device
+```
+
+### Performans Problemi
+```bash
+# MikroTik memory loglarını kapat
+/system logging remove [find action=memory]
+
+# Log rotasyonu ayarla
+sudo nano /etc/logrotate.d/mikrotik-logs
+```
+
 ## Gereksinimler
 
 - Ubuntu 20.04+
 - rsyslog 8.0+
 - MikroTik RouterOS 6.40+
+- Git (kurulum için)
+
+## Güncelleme
+
+```bash
+# Repository'yi güncelle
+cd basiclogging
+git pull origin master
+
+# Konfigürasyonu yeniden uygula
+sudo cp 50-mikrotik-dynamic.conf /etc/rsyslog.d/
+sudo systemctl restart rsyslog
+```
 
 ## Lisans
 
