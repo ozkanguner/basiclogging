@@ -1,0 +1,29 @@
+# MikroTik Log Rotation Configuration - FIXED
+# /etc/logrotate.d/mikrotik-logs
+
+/var/5651/*/*/*.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 644 syslog adm
+    su syslog adm
+    postrotate
+        systemctl reload rsyslog > /dev/null 2>&1 || true
+    endscript
+}
+
+# Sistem logunu da düzelt
+/var/log/syslog {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    notifempty
+    create 640 syslog adm
+    su syslog adm
+    postrotate
+        systemctl reload rsyslog > /dev/null 2>&1 || true
+    endscript
+} 
